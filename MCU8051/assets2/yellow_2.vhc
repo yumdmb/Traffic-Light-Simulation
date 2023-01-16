@@ -1,0 +1,5 @@
+# MCU 8051 IDE: Virtual HW component configuration file
+# Project: Test1
+# Component: LED Panel
+
+LedPanel {{4 2 0 2 5 2 1 2 6 2 2 2 7 2 3 2} {4 3 0 3 5 3 1 3 6 3 2 3 7 3 3 3} {} yellow_2 yellow 1}

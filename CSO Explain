@@ -1,0 +1,165 @@
+Sure, this assembly code is for a traffic light simulation. It uses a microcontroller's ports as outputs to control the lights.
+
+At the beginning of the code, it sets the ports P0, P1, P2, and P3 as outputs by moving the value 0xFF to the accumulator (A) and then moving the accumulator to each of the ports. This sets all the pins of these ports as output pins.
+
+Then it sets the data pointer (DPTR) to the address of a table called SEG. Data pointer is a 16-bit register that is used to point to a specific location in the data memory.
+
+Then it enters a loop that starts with the label "START:". Inside the loop, it sets different lanes as green or yellow by moving specific values to registers R7 and R6. For example, in the first iteration of the loop, it sets Lane 1 as green and others as red by moving the value 0x024 to R7 and 0x021 to R6.
+
+After setting the values to R7 and R6, it complements the values in the R7 and R6 (CPL instruction), and move the complemented values to the P0 and P2 ports respectively. Complementing the values changes the values in R7 and R6 to their binary inverse, so if a bit was 1, it becomes 0 and vice versa.
+
+After that, it calls the subroutine "GREENCOUNT" which is responsible for counting down the duration of the green light. The subroutine uses the B register as a counter, and decrements it in a loop until it reaches a certain value. It loads the value from the data memory pointed by the B register and DPTR, and move it to P1. Then it calls the subroutine "DELAY" which is responsible for creating a delay.
+
+After the green light time is over, the same process is repeated for the yellow light. This time it calls the subroutine "YELLOWCOUNT" which is similar to the GREEN COUNT subroutine but it loads the data to P3.
+
+The loop continues to iterate, setting different lanes as green or yellow and counting down the duration of the lights until an infinite loop is formed.
+
+The code uses the MOV, CPL, ACALL, and AJMP instructions to move data, complement it, call subroutines, and jump to a specific address in memory respectively. The "ACALL" instruction is used to call a subroutine, it pushes the current address to the stack and jump to the subroutine. The "AJMP" instruction is used to jump to a specific address in memory, it directly jump to the address specified.
+
+
+
+//Why Complementing
+
+The reason for complementing the values in R7 and R6 before moving them to the ports is that the traffic light simulation is using active-low outputs. In active-low outputs, a logical 0 on a pin corresponds to a high voltage level (usually 5V) and a logical 1 corresponds to a low voltage level (usually 0V).
+
+In this code, the values 0x024 and 0x021 represent the states of the lights, where bits that are 1 represent a light that is on and bits that are 0 represent a light that is off.
+
+When the values are moved to the ports P0 and P2, they directly control the lights. So a logical 0 on a pin turns on the light and a logical 1 turns off the light.
+
+By complementing the values in R7 and R6 before moving them to the ports, it changes all the 1s to 0s and all the 0s to 1s. This way, the code can represent the states of the lights using the same values as before, but now a logical 1 on a pin will turn on the light and a logical 0 will turn off the light.
+
+This way, the code uses the active-low outputs to control the lights.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CODE:
+
+ORG   00H
+  AJMP   MAIN
+  
+MAIN:   MOV   A,#00H
+  MOV   P0,A ;Set Port 0 as output
+  MOV   P1,A ;Set Port 1 as output
+  MOV   P2,A ;Set Port 2 as output
+  MOV   P3,A ;Set Port 3 as output
+  MOV   DPTR,#SEG ;MOVE TABLE ADRESS TO DATA POINTER
+  
+START:   MOV   R7,#01BH ;Set Lane 1 as green and others red
+  MOV   R6,#1EH
+  MOV   A,R7
+  MOV   P0,A
+  MOV   A,R6
+  MOV   P2,A 
+  ACALL   GREENCOUNT ;Call Counter subroutine 
+  MOV   R7,#01BH ;Set Lane 1 as yellow and others red
+  MOV   R6,#01DH
+  MOV   A,R7
+  MOV   P0,A
+  MOV   A,R6
+  MOV   P2,A 
+  ACALL   YELLOWCOUNT ;Call Yellow Counter subroutine
+  MOV   R7,#01BH ;Set Lane 2 as green and others red
+  MOV   R6,#0F3H
+  MOV   A,R7
+  MOV   P0,A
+  MOV   A,R6
+  MOV   P2,A 
+  ACALL   GREENCOUNT ;Call Counter subroutine
+  
+  MOV   R7,#01BH ;Set Lane 2 as yellow and others red
+  MOV   R6,#2BH
+  MOV   A,R7
+  MOV   P0,A
+  MOV   A,R6
+  MOV   P2,A 
+  ACALL   YELLOWCOUNT ;Call Yellow Counter subroutine
+  
+  MOV   R7,#01EH ;Set Lane 3 as green and others red
+  MOV   R6,#01BH
+  MOV     A,R7
+  MOV   P0,A
+  MOV   A,R6
+  MOV   P2,A 
+  ACALL   GREENCOUNT ;Call Counter subroutine
+  
+  MOV   R7,#01DH ;Set Lane 3 as yellow and others red
+  MOV   R6,#01BH
+  MOV   A,R7
+  MOV   P0,A
+  MOV   A,R6
+  MOV   P2,A 
+  ACALL   YELLOWCOUNT ;Call Yellow Counter subroutine
+  MOV   R7,#0F3H ;Set Lane 4 as yellow and others red
+  MOV   R6,#0DBH
+  MOV A,R7
+  MOV P0,A
+  MOV A,R6
+  MOV P2,A 
+  ACALL GREENCOUNT ;Call Counter subroutine
+  MOV R7,#0EBH ;Set Lane 4 as yellow and others red
+  MOV R6,#0DBH
+  MOV A,R7
+  MOV P0,A
+  MOV A,R6
+  MOV P2,A 
+  ACALL YELLOWCOUNT ;Call Yellow Counter subroutine
+  AJMP START
+  
+GREENCOUNT:   MOV   B,#09H
+    MOV  A,B
+    MOVC   A,@A+DPTR
+    MOV   P1,A
+    ACALL   DELAY
+  
+DECREMENTGREEN:DEC   B
+    MOV  A,B
+    MOVC   A,@A+DPTR
+    MOV   P1,A
+    ACALL   DELAY
+    CJNE   A,#3FH,DECREMENTGREEN
+    MOV   P1,#00H
+    RET 
+
+YELLOWCOUNT:  MOV   B,#09H
+      MOV   A,B
+     MOVC   A,@A+DPTR 
+     MOV   P3,A
+     ACALL  DELAY
+      AJMP   DECREMENTYELLOW
+
+DECREMENTYELLOW:DEC   B
+    MOV  A,B
+    MOVC   A,@A+DPTR
+    MOV   P3,A
+    ACALL   DELAY
+    CJNE   A,#3FH,DECREMENTYELLOW
+    MOV	   P3,#00H	
+    RET 
+    
+DELAY:  MOV   R1,#09H ; Delay-for counter
+DELAY1:   DJNZ   R1,DELAY1
+  RET
+  
+  ;LOOK IP TABLE FOR 7SEGMENT DISPLAY
+  SEG: DB 3Fh,06h,5Bh,4Fh,66h,6Dh,7Dh,07h,7Fh,6Fh,77h,7Ch,39h,5Eh,79h,71h
+  END
+
+
+
+//Componets
+
+- 28 reg
+- 12 led
+- 2 counter
+- 8051
